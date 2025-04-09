@@ -39,7 +39,9 @@ void eratosthenes_bitmap(size_t count, eint_t *result_destination, size_t *resul
     size_t res_size = 0;
     for(eint_t p = 2; p < count; ++p){
         if(! get_bit(flags, p)){
-            result_destination[res_size++] = p;
+            if(result_destination)
+                result_destination[res_size] = p;
+            ++res_size;
         }
     }
     *result_size = res_size;
@@ -61,7 +63,9 @@ void eratosthenes_bitmap_sqrt(size_t count, eint_t *result_destination, size_t *
     size_t res_size = 0;
     for(eint_t p = 2; p < count; ++p){
         if(! get_bit(flags, p)){
-            result_destination[res_size++] = p;
+            if(result_destination)
+                result_destination[res_size] = p;
+            ++res_size;
         }
     }
     *result_size = res_size;
@@ -80,7 +84,9 @@ void eratosthenes_ref(size_t count, eint_t *result_destination, size_t *result_s
     size_t res_size = 0;
     for(eint_t p = 2; p < count; ++p){
         if(! flags[p]){
-            result_destination[res_size++] = p;
+            if(result_destination)
+                result_destination[res_size] = p;
+            ++res_size;
         }
     }
     *result_size = res_size;
@@ -139,14 +145,10 @@ void bitarray_test(void){
 
 
 int main(void){
-    test();
-    return 0;
-    const size_t COUNT = 500;
-    eint_t *result = malloc(COUNT * sizeof(unsigned));
-    size_t result_count;
-    eratosthenes_ref(COUNT, result, &result_count);
-    for(size_t t = 0;t<result_count;++t){
-        printf("%u\n", result[t]);
-    }
+    size_t in, ret;
+    scanf("%lu", &in);
+    eratosthenes_bitmap_sqrt(in, NULL, &ret);
+    printf("%lu", ret);
+
     return 0;
 }
