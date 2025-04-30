@@ -8,6 +8,7 @@
 #include<math.h>
 
 #define min(a,b) (((a) < (b)) ? (a) : (b))
+#define max(a,b) (((a) >= (b)) ? (a) : (b))
 
 #define ARRAY_LENGTH(arr) (sizeof(arr) / sizeof(*(arr)))
 
@@ -193,6 +194,66 @@ void eratosthenes_bitmap_sqrt_halved_pseudovec(size_t count, eint_t *result_dest
 }
 
 
+int count_primes(size_t n, eint_t *result_destination, size_t *result_size) {
+    (void) result_destination;
+    const size_t S = 10000;
+
+    eint_t nsqrt = (eint_t)(sqrt(n) + 1);
+    char * is_prime = malloc(nsqrt + 2);
+    memset(is_prime, ~0, nsqrt + 2);
+    eint_t* primes = malloc((nsqrt + 2)*sizeof(eint_t));
+    size_t primes_length = 0;
+    for (size_t i = 2; i <= nsqrt; i++) {
+        if (is_prime[i]) {
+            primes[primes_length++] = i;
+            for (size_t j = i * i; j <= nsqrt; j += i)
+                is_prime[j] = false;
+        }
+    }
+
+    size_t result = 0;
+    char* block = malloc(S);
+    
+    for (int k = 0; k * S <= n; k++) {
+        memset(block, ~0, S);
+        int start = k * S;
+        for (size_t t = 0; t<primes_length;++t) {
+            eint_t p = primes[t];
+            size_t start_idx = (start + p - 1) / p;
+            size_t j = max(start_idx, p) * p - start;
+            for (; j < S; j += p)
+                block[j] = false;
+        }
+        if (k == 0)
+            block[0] = block[1] = false;
+        for (size_t i = 0; i < S && start + i <= n; i++) {
+            if (block[i])
+                result++;
+        }
+    }
+
+    *result_size = result; 
+
+    //size_t res_size = 0;
+    //for(eint_t p = 3; p < n; p += 2){
+    //    if(! get_bit(flags, p>>1)){
+    //        if(result_destination)
+    //            result_destination[res_size] = p;
+    //        ++res_size;
+    //    }
+    //}
+    //*result_size = res_size;
+
+    free(is_prime);
+    free(primes);
+    free(block);
+    return result;
+}
+
+
+
+
+
 void eratosthenes_ref(size_t count, eint_t *result_destination, size_t *result_size){
     char *const flags = malloc((count + 2)*sizeof(char));
     memset(flags, 0, (count + 2)*sizeof(char));
@@ -278,7 +339,7 @@ int main(void){
     size_t ret;
     scanf("%lu", &in);
     //eint_t result[in];
-    eratosthenes_solution(in, NULL, &ret);
+    count_primes(in, NULL, &ret);
     printf("%lu", ret);
     //for(size_t t=0;t<ret;++t){
     //    printf("%lu\n", result[t]);
