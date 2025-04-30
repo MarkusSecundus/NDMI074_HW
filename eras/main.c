@@ -27,6 +27,39 @@ void set_bit(char *const bitarray, const size_t idx, const bool value){
     }
 }
 
+void eratosthenes_bitmap_sqrt_halved(size_t count, eint_t *result_destination, size_t *result_size){
+    const size_t flags_size = (count + 2)/(8 * 2);
+    char *const flags = malloc(flags_size * sizeof(char));
+    memset(flags, 0, flags_size*sizeof(char));
+
+    eint_t sq = (eint_t)(sqrt(count)) + 1;
+
+    for(eint_t p = 3; p < sq; p += 2){
+        //printf("p: %lu\n", p);
+        if(get_bit(flags, p>>1)) continue;
+        for(eint_t t = p * p; t < count; t += 2*p){
+            set_bit(flags, t>>1, 1);
+        }
+    }
+    
+    size_t res_size = 0;
+
+    if(count >= 2){
+        if(result_destination)
+            result_destination[res_size] = 2;
+        ++res_size;
+    }
+    for(eint_t p = 3; p < count; p += 2){
+        if(! get_bit(flags, p>>1)){
+            if(result_destination)
+                result_destination[res_size] = p;
+            ++res_size;
+        }
+    }
+    *result_size = res_size;
+}
+
+
 void eratosthenes_bitmap(size_t count, eint_t *result_destination, size_t *result_size){
     const size_t flags_size = (count + 2)/8;
     char *const flags = malloc(flags_size * sizeof(char));
@@ -76,38 +109,6 @@ void eratosthenes_bitmap_sqrt(size_t count, eint_t *result_destination, size_t *
 
 
 
-
-void eratosthenes_bitmap_sqrt_halved(size_t count, eint_t *result_destination, size_t *result_size){
-    const size_t flags_size = (count + 2)/(8 * 2);
-    char *const flags = malloc(flags_size * sizeof(char));
-    memset(flags, 0, flags_size*sizeof(char));
-
-    eint_t sq = (eint_t)(sqrt(count)) + 1;
-
-    for(eint_t p = 3; p < sq; p += 2){
-        //printf("p: %lu\n", p);
-        if(get_bit(flags, p>>1)) continue;
-        for(eint_t t = p * 3; t < count; t += 2*p){
-            set_bit(flags, t>>1, 1);
-        }
-    }
-    
-    size_t res_size = 0;
-
-    if(count >= 2){
-        if(result_destination)
-            result_destination[res_size] = 2;
-        ++res_size;
-    }
-    for(eint_t p = 3; p < count; p += 2){
-        if(! get_bit(flags, p>>1)){
-            if(result_destination)
-                result_destination[res_size] = p;
-            ++res_size;
-        }
-    }
-    *result_size = res_size;
-}
 
 char* bits_tos(uint64_t num){
     char* ret = malloc(1024);
