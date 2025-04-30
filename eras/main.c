@@ -214,7 +214,7 @@ void eratosthenes_ref(size_t count, eint_t *result_destination, size_t *result_s
 }
 
 
-#define eratosthenes_solution eratosthenes_bitmap_sqrt_halved_pseudovec
+#define eratosthenes_solution eratosthenes_bitmap_sqrt_halved
 
 static const size_t TEST_COUNT = 100000000;
 static const size_t BENCH_COUNT = 1000000000;
@@ -272,16 +272,16 @@ void bitarray_test(void){
 
 
 int main(void){
-    test(); return 0;
-    const size_t in = 999;
+    //test(); return 0;
+    size_t in;
     size_t ret;
-    //scanf("%lu", &in);
-    eint_t result[in];
-    eratosthenes_solution(in, result, &ret);
-    //printf("%lu", ret);
-    for(size_t t=0;t<ret;++t){
-        printf("%lu\n", result[t]);
-    }
+    scanf("%lu", &in);
+    //eint_t result[in];
+    eratosthenes_solution(in, NULL, &ret);
+    printf("%lu", ret);
+    //for(size_t t=0;t<ret;++t){
+    //    printf("%lu\n", result[t]);
+    //}
 
     return 0;
 }
