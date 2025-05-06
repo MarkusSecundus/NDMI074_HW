@@ -3,7 +3,6 @@
 CFLAGS += \
 		-Wall \
 		-Wextra \
-		-Werror \
 		-Wno-unused-result \
 		-std=gnu11 \
 		-g \

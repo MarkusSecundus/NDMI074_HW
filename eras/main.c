@@ -235,9 +235,8 @@ void eratosthenes_bitmap_sqrt_halved_blocked_threaded(size_t count, eint_t *resu
     thrd_t threads[THREADS_COUNT];
     uint32_t chunk_per_thread = count / THREADS_COUNT;
     chunk_per_thread += THREADED_BLOCK_SIZE - (chunk_per_thread % THREADED_BLOCK_SIZE);
-    struct chunk_args thread_args[THREADS_COUNT] = {};
+    struct chunk_args thread_args[THREADS_COUNT];
     for(unsigned i = 0; i <THREADS_COUNT;++i){
-
         thread_args[i].block_start = i * chunk_per_thread;
         thread_args[i].count = min(count, thread_args[i].block_start + chunk_per_thread);
         thread_args[i].flags = flags;
