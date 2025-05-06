@@ -6,6 +6,7 @@
 #include<stdbool.h>
 #include<string.h>
 #include<math.h>
+#include<threads.h>
 
 #define min(a,b) (((a) < (b)) ? (a) : (b))
 #define max(a,b) (((a) >= (b)) ? (a) : (b))
@@ -43,6 +44,302 @@ void eratosthenes_bitmap_sqrt_halved(size_t count, eint_t *result_destination, s
         }
     }
     
+    size_t res_size = 0;
+
+    if(count >= 2){
+        if(result_destination)
+            result_destination[res_size] = 2;
+        ++res_size;
+    }
+    for(eint_t p = 3; p < count; p += 2){
+        if(! get_bit(flags, p>>1)){
+            if(result_destination)
+                result_destination[res_size] = p;
+            ++res_size;
+        }
+    }
+    *result_size = res_size;
+}
+
+void eratosthenes_bitmap_sqrt_halved_u32(size_t count, uint32_t *result_destination, size_t *result_size){
+    const size_t flags_size = (count + 2)/(8 * 2);
+    char *const flags = malloc(flags_size * sizeof(char));
+    memset(flags, 0, flags_size*sizeof(char));
+
+    eint_t sq = (eint_t)(sqrt(count)) + 1;
+
+    for(eint_t p = 3; p < sq; p += 2){
+        //printf("p: %lu\n", p);
+        if(get_bit(flags, p>>1)) continue;
+        for(eint_t t = p * p; t < count; t += 2*p){
+            set_bit(flags, t>>1, 1);
+        }
+    }
+    
+    size_t res_size = 0;
+
+    if(count >= 2){
+        if(result_destination)
+            result_destination[res_size] = 2;
+        ++res_size;
+    }
+    for(eint_t p = 3; p < count; p += 2){
+        if(! get_bit(flags, p>>1)){
+            if(result_destination)
+                result_destination[res_size] = (uint32_t)p;
+            ++res_size;
+        }
+    }
+    *result_size = res_size;
+}
+
+void eratosthenes_bitmap_sqrt_halved_indirect(size_t count, eint_t *result_destination, size_t *result_size){
+    const size_t flags_size = (count + 2)/(8 * 2);
+    char *const flags = malloc(flags_size * sizeof(char));
+    memset(flags, 0, flags_size*sizeof(char));
+
+    eint_t sq = (eint_t)(sqrt(count)) + 1;
+
+    uint32_t *small_primes = malloc(sq * sizeof(uint32_t));
+    size_t small_primes_count;
+    eratosthenes_bitmap_sqrt_halved_u32(sq, small_primes, &small_primes_count);
+
+    for(size_t i=1; i < small_primes_count; ++i){
+        const uint32_t p = small_primes[i];
+        for(eint_t step = p * p; step < count; step += 2*p){
+            set_bit(flags, step>>1, 1);
+        }
+    }
+    
+    size_t res_size = 0;
+
+    if(count >= 2){
+        if(result_destination)
+            result_destination[res_size] = 2;
+        ++res_size;
+    }
+    for(eint_t p = 3; p < count; p += 2){
+        if(! get_bit(flags, p>>1)){
+            if(result_destination)
+                result_destination[res_size] = p;
+            ++res_size;
+        }
+    }
+    *result_size = res_size;
+}
+
+void eratosthenes_bitmap_sqrt_halved_blocked(size_t count, eint_t *result_destination, size_t *result_size){
+    const size_t flags_size = (count + 2)/(8 * 2);
+    char *const flags = malloc(flags_size * sizeof(char));
+    memset(flags, 0, flags_size*sizeof(char));
+
+    eint_t sq = (eint_t)(sqrt(count)) + 1;
+
+    uint32_t *small_primes = malloc(sq * sizeof(uint32_t));
+    size_t small_primes_count;
+    eratosthenes_bitmap_sqrt_halved_u32(sq, small_primes, &small_primes_count);
+
+    const size_t BLOCK_SIZE = (1<<22);
+
+    for(eint_t block_start = 0; block_start < count; block_start += BLOCK_SIZE){
+        const eint_t block_end = block_start + BLOCK_SIZE;
+        for(size_t i=1; i < small_primes_count; ++i){
+            const uint32_t p = small_primes[i];
+            eint_t step = p*p;
+            if(block_start > step){
+                step = block_start - (block_start %p);
+                if(!(step&1)) step += p;
+                if(step < block_start) step += 2*p;
+                //static int cnt = 0;
+                //if(block_start > 0 && (step % p) == 0 && (++cnt < 20)) printf("!%lu (%u): %lu!\n", block_start, p, step);
+            }
+            for(; step < block_end; step += 2*p){
+                //if(step < block_start) continue;
+                set_bit(flags, step>>1, 1);
+            }
+        }
+    }
+    
+    size_t res_size = 0;
+
+    if(count >= 2){
+        if(result_destination)
+            result_destination[res_size] = 2;
+        ++res_size;
+    }
+    for(eint_t p = 3; p < count; p += 2){
+        if(! get_bit(flags, p>>1)){
+            if(result_destination)
+                result_destination[res_size] = p;
+            ++res_size;
+        }
+    }
+    *result_size = res_size;
+}
+
+
+
+static const size_t THREADED_BLOCK_SIZE = (1<<22);
+
+struct chunk_args{
+    eint_t block_start;
+    eint_t count;
+    char *flags;
+    uint32_t  *small_primes;
+    size_t  small_primes_count;
+};
+
+int chunk(void *arg_void){
+    struct chunk_args *args = (struct chunk_args*)arg_void;
+    eint_t block_start = args->block_start;
+    const eint_t count = args->count;
+    char *const flags = args->flags;
+    uint32_t *const small_primes = args->small_primes;
+    const size_t small_primes_count = args->small_primes_count;
+
+    for(; block_start < count; block_start += THREADED_BLOCK_SIZE){
+        const eint_t block_end = block_start + THREADED_BLOCK_SIZE;
+        for(size_t i=1; i < small_primes_count; ++i){
+            const uint32_t p = small_primes[i];
+            eint_t step = p*p;
+            if(block_start > step){
+                step = block_start - (block_start %p);
+                if(!(step&1)) step += p;
+                if(step < block_start) step += 2*p;
+                //static int cnt = 0;
+                //if(block_start > 0 && (step % p) == 0 && (++cnt < 20)) printf("!%lu (%u): %lu!\n", block_start, p, step);
+            }
+            for(; step < block_end; step += 2*p){
+                //if(step < block_start) continue;
+                set_bit(flags, step>>1, 1);
+            }
+        }
+    }
+    return 0;
+}
+
+
+void eratosthenes_bitmap_sqrt_halved_blocked_threaded(size_t count, eint_t *result_destination, size_t *result_size){
+    const size_t flags_size = (count + 2)/(8 * 2);
+    char *const flags = malloc(flags_size * sizeof(char));
+    memset(flags, 0, flags_size*sizeof(char));
+
+    eint_t sq = (eint_t)(sqrt(count)) + 1;
+
+    uint32_t *small_primes = malloc(sq * sizeof(uint32_t));
+    size_t small_primes_count;
+    eratosthenes_bitmap_sqrt_halved_u32(sq, small_primes, &small_primes_count);
+
+
+    static const unsigned THREADS_COUNT = 16;
+    thrd_t threads[THREADS_COUNT];
+    uint32_t chunk_per_thread = count / THREADS_COUNT;
+    chunk_per_thread += THREADED_BLOCK_SIZE - (chunk_per_thread % THREADED_BLOCK_SIZE);
+    struct chunk_args thread_args[THREADS_COUNT] = {};
+    for(unsigned i = 0; i <THREADS_COUNT;++i){
+
+        thread_args[i].block_start = i * chunk_per_thread;
+        thread_args[i].count = min(count, thread_args[i].block_start + chunk_per_thread);
+        thread_args[i].flags = flags;
+        thread_args[i].small_primes = small_primes;
+        thread_args[i].small_primes_count = small_primes_count;
+        thrd_create(&threads[i], chunk, &thread_args[i]);
+    }
+
+    for(unsigned i = 0; i < THREADS_COUNT;++i){
+        thrd_join(threads[i], NULL);
+    }
+    
+    size_t res_size = 0;
+
+    if(count >= 2){
+        if(result_destination)
+            result_destination[res_size] = 2;
+        ++res_size;
+    }
+    for(eint_t p = 3; p < count; p += 2){
+        if(! get_bit(flags, p>>1)){
+            if(result_destination)
+                result_destination[res_size] = p;
+            ++res_size;
+        }
+    }
+    *result_size = res_size;
+}
+
+void eratosthenes_sqrt_halved_blocked(size_t count, eint_t *result_destination, size_t *result_size){
+    const size_t flags_size = (count + 2)/2;
+    char *const flags = malloc(flags_size * sizeof(char));
+    memset(flags, 0, flags_size*sizeof(char));
+
+    eint_t sq = (eint_t)(sqrt(count)) + 1;
+
+    uint32_t *small_primes = malloc(sq * sizeof(uint32_t));
+    size_t small_primes_count;
+    eratosthenes_bitmap_sqrt_halved_u32(sq, small_primes, &small_primes_count);
+
+    const size_t BLOCK_SIZE = (1<<20);
+
+    for(eint_t block_start = 0; block_start < count; block_start += BLOCK_SIZE){
+        const eint_t block_end = block_start + BLOCK_SIZE;
+        for(size_t i=1; i < small_primes_count; ++i){
+            const uint32_t p = small_primes[i];
+            eint_t step = p*p;
+            if(block_start > step){
+                step = block_start - (block_start %p);
+                if(!(step&1)) step += p;
+                if(step < block_start) step += 2*p;
+                //static int cnt = 0;
+                //if(block_start > 0 && (step % p) == 0 && (++cnt < 20)) printf("!%lu (%u): %lu!\n", block_start, p, step);
+            }
+            for(; step < block_end; step += 2*p){
+                //if(step < block_start) continue;
+                flags[step>>1] = 1;
+            }
+        }
+    }
+    
+    size_t res_size = 0;
+
+    if(count >= 2){
+        if(result_destination)
+            result_destination[res_size] = 2;
+        ++res_size;
+    }
+    for(eint_t p = 3; p < count; p += 2){
+        if(! flags[p>>1]){
+            if(result_destination)
+                result_destination[res_size] = p;
+            ++res_size;
+        }
+    }
+    *result_size = res_size;
+}
+
+
+void eratosthenes_bitmap_sqrt_halved_blocked2_broken(size_t count, eint_t *result_destination, size_t *result_size){
+    const size_t BLOCK_SIZE = 8192;
+    const size_t flags_size = (count + 2)/(8 * 2);
+    char *const flags = malloc(flags_size * sizeof(char));
+    memset(flags, 0, flags_size*sizeof(char));
+
+    eint_t sq = (eint_t)(sqrt(count)) + 1;
+
+
+    for(size_t block_start = 0; block_start < count; block_start += BLOCK_SIZE){
+        const size_t outer_end = min(block_start + BLOCK_SIZE, sq);
+        const size_t inner_end = min(block_start + BLOCK_SIZE, count);
+        for(eint_t p = 3; p < outer_end; p += 2){
+            //printf("p: %lu\n", p);
+            if(get_bit(flags, p>>1)) continue;
+            for(eint_t t = 3*p; t < inner_end; t += 2*p){
+                if(t < block_start) continue;
+                set_bit(flags, t>>1, 1);
+            }
+        }
+    }
+    
+
     size_t res_size = 0;
 
     if(count >= 2){
@@ -276,10 +573,10 @@ void eratosthenes_ref(size_t count, eint_t *result_destination, size_t *result_s
 }
 
 
-#define eratosthenes_solution eratosthenes_bitmap_sqrt_halved
+#define eratosthenes_solution eratosthenes_bitmap_sqrt_halved_blocked_threaded
 
-static const size_t TEST_COUNT = 100000000;
-static const size_t BENCH_COUNT = 1000000000;
+static const size_t TEST_COUNT  = 100000000;
+static const size_t BENCH_COUNT = 20000000000;//1000000000;
 
 void test(void){
 #define eratosthenes_test eratosthenes_solution
@@ -334,12 +631,12 @@ void bitarray_test(void){
 
 
 int main(void){
-    //test(); return 0;
+    test(); return 0;
     size_t in;
     size_t ret;
     scanf("%lu", &in);
     //eint_t result[in];
-    count_primes(in, NULL, &ret);
+    eratosthenes_solution(in, NULL, &ret);
     printf("%lu", ret);
     //for(size_t t=0;t<ret;++t){
     //    printf("%lu\n", result[t]);
