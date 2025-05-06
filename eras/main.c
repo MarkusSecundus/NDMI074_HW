@@ -222,7 +222,7 @@ int chunk(void *arg_void){
 
 void eratosthenes_bitmap_sqrt_halved_blocked_threaded(size_t count, eint_t *result_destination, size_t *result_size){
 
-    static const unsigned THREADS_COUNT = 16;
+    static const unsigned THREADS_COUNT = 12;
     if(count < (THREADS_COUNT * THREADED_BLOCK_SIZE * 3)){
         eratosthenes_bitmap_sqrt_halved(count, result_destination, result_size);
         return;
