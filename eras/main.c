@@ -634,7 +634,7 @@ int main(void){
     //test(); return 0;
     size_t in = 20000000000;
     size_t ret;
-    //scanf("%lu", &in);
+    scanf("%lu", &in);
     //eint_t result[in];
     eratosthenes_solution(in, NULL, &ret);
     printf("%lu", ret);
