@@ -630,7 +630,7 @@ void bitarray_test(void){
 
 
 int main(void){
-    test(); return 0;
+    //test(); return 0;
     size_t in;
     size_t ret;
     scanf("%lu", &in);
