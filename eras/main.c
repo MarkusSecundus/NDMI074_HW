@@ -221,6 +221,13 @@ int chunk(void *arg_void){
 
 
 void eratosthenes_bitmap_sqrt_halved_blocked_threaded(size_t count, eint_t *result_destination, size_t *result_size){
+
+    static const unsigned THREADS_COUNT = 16;
+    if(count < (THREADS_COUNT * THREADED_BLOCK_SIZE * 3)){
+        eratosthenes_bitmap_sqrt_halved(count, result_destination, result_size);
+        return;
+    }
+
     const size_t flags_size = (count + 2)/(8 * 2);
     char *const flags = malloc(flags_size * sizeof(char));
     memset(flags, 0, flags_size*sizeof(char));
@@ -232,7 +239,8 @@ void eratosthenes_bitmap_sqrt_halved_blocked_threaded(size_t count, eint_t *resu
     eratosthenes_bitmap_sqrt_halved_u32(sq, small_primes, &small_primes_count);
 
 
-    static const unsigned THREADS_COUNT = 16;
+
+
     thrd_t threads[THREADS_COUNT];
     uint32_t chunk_per_thread = count / THREADS_COUNT;
     chunk_per_thread += THREADED_BLOCK_SIZE - (chunk_per_thread % THREADED_BLOCK_SIZE);
