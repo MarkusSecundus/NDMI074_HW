@@ -142,7 +142,7 @@ void eratosthenes_bitmap_sqrt_halved_blocked(size_t count, eint_t *result_destin
     const size_t BLOCK_SIZE = (1<<22);
 
     for(eint_t block_start = 0; block_start < count; block_start += BLOCK_SIZE){
-        const eint_t block_end = block_start + BLOCK_SIZE;
+        const eint_t block_end = min(count, block_start + BLOCK_SIZE);
         for(size_t i=1; i < small_primes_count; ++i){
             const uint32_t p = small_primes[i];
             eint_t step = p*p;
@@ -158,6 +158,7 @@ void eratosthenes_bitmap_sqrt_halved_blocked(size_t count, eint_t *result_destin
                 set_bit(flags, step>>1, 1);
             }
         }
+        //printf("block: %lu - %lu\n", block_start, block_end);
     }
     
     size_t res_size = 0;
@@ -198,7 +199,7 @@ int chunk(void *arg_void){
     const size_t small_primes_count = args->small_primes_count;
 
     for(; block_start < count; block_start += THREADED_BLOCK_SIZE){
-        const eint_t block_end = block_start + THREADED_BLOCK_SIZE;
+        const eint_t block_end = min(count, block_start + THREADED_BLOCK_SIZE);
         for(size_t i=1; i < small_primes_count; ++i){
             const uint32_t p = small_primes[i];
             eint_t step = p*p;
@@ -631,9 +632,9 @@ void bitarray_test(void){
 
 int main(void){
     //test(); return 0;
-    size_t in;
+    size_t in = 20000000000;
     size_t ret;
-    scanf("%lu", &in);
+    //scanf("%lu", &in);
     //eint_t result[in];
     eratosthenes_solution(in, NULL, &ret);
     printf("%lu", ret);
