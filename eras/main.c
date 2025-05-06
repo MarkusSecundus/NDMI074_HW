@@ -30,7 +30,7 @@ void set_bit(char *const bitarray, const size_t idx, const bool value){
 }
 
 void eratosthenes_bitmap_sqrt_halved(size_t count, eint_t *result_destination, size_t *result_size){
-    const size_t flags_size = (count + 2)/(8 * 2);
+    const size_t flags_size = (count + 2)/(8 * 2) + 10;
     char *const flags = malloc(flags_size * sizeof(char));
     memset(flags, 0, flags_size*sizeof(char));
 
@@ -62,7 +62,7 @@ void eratosthenes_bitmap_sqrt_halved(size_t count, eint_t *result_destination, s
 }
 
 void eratosthenes_bitmap_sqrt_halved_u32(size_t count, uint32_t *result_destination, size_t *result_size){
-    const size_t flags_size = (count + 2)/(8 * 2);
+    const size_t flags_size = (count + 2)/(8 * 2) + 10;
     char *const flags = malloc(flags_size * sizeof(char));
     memset(flags, 0, flags_size*sizeof(char));
 
@@ -94,7 +94,7 @@ void eratosthenes_bitmap_sqrt_halved_u32(size_t count, uint32_t *result_destinat
 }
 
 void eratosthenes_bitmap_sqrt_halved_indirect(size_t count, eint_t *result_destination, size_t *result_size){
-    const size_t flags_size = (count + 2)/(8 * 2);
+    const size_t flags_size = (count + 2)/(8 * 2) + 10;
     char *const flags = malloc(flags_size * sizeof(char));
     memset(flags, 0, flags_size*sizeof(char));
 
@@ -129,7 +129,7 @@ void eratosthenes_bitmap_sqrt_halved_indirect(size_t count, eint_t *result_desti
 }
 
 void eratosthenes_bitmap_sqrt_halved_blocked(size_t count, eint_t *result_destination, size_t *result_size){
-    const size_t flags_size = (count + 2)/(8 * 2);
+    const size_t flags_size = (count + 2)/(8 * 2) + 10;
     char *const flags = malloc(flags_size * sizeof(char));
     memset(flags, 0, flags_size*sizeof(char));
 
@@ -228,19 +228,17 @@ void eratosthenes_bitmap_sqrt_halved_blocked_threaded(size_t count, eint_t *resu
         return;
     }
 
-    const size_t flags_size = (count + 2)/(8 * 2);
+    const size_t flags_size = (count + 2)/(8 * 2) + 10;
     char *const flags = malloc(flags_size * sizeof(char));
     memset(flags, 0, flags_size*sizeof(char));
 
     eint_t sq = (eint_t)(sqrt(count)) + 1;
 
-    uint32_t *small_primes = malloc(sq * sizeof(uint32_t));
+    uint32_t *small_primes = malloc((sq+10) * sizeof(uint32_t));
     size_t small_primes_count;
     eratosthenes_bitmap_sqrt_halved_u32(sq, small_primes, &small_primes_count);
 
-
-
-
+    
     thrd_t threads[THREADS_COUNT];
     uint32_t chunk_per_thread = count / THREADS_COUNT;
     chunk_per_thread += THREADED_BLOCK_SIZE - (chunk_per_thread % THREADED_BLOCK_SIZE);
@@ -277,7 +275,7 @@ void eratosthenes_bitmap_sqrt_halved_blocked_threaded(size_t count, eint_t *resu
 
 void eratosthenes_sqrt_halved_blocked(size_t count, eint_t *result_destination, size_t *result_size){
     const size_t flags_size = (count + 2)/2;
-    char *const flags = malloc(flags_size * sizeof(char));
+    char *const flags = malloc(flags_size * sizeof(char)) + 10;
     memset(flags, 0, flags_size*sizeof(char));
 
     eint_t sq = (eint_t)(sqrt(count)) + 1;
@@ -327,7 +325,7 @@ void eratosthenes_sqrt_halved_blocked(size_t count, eint_t *result_destination, 
 
 void eratosthenes_bitmap_sqrt_halved_blocked2_broken(size_t count, eint_t *result_destination, size_t *result_size){
     const size_t BLOCK_SIZE = 8192;
-    const size_t flags_size = (count + 2)/(8 * 2);
+    const size_t flags_size = (count + 2)/(8 * 2) + 10;
     char *const flags = malloc(flags_size * sizeof(char));
     memset(flags, 0, flags_size*sizeof(char));
 
@@ -367,7 +365,7 @@ void eratosthenes_bitmap_sqrt_halved_blocked2_broken(size_t count, eint_t *resul
 
 
 void eratosthenes_bitmap(size_t count, eint_t *result_destination, size_t *result_size){
-    const size_t flags_size = (count + 2)/8;
+    const size_t flags_size = (count + 2)/8 + 10;
     char *const flags = malloc(flags_size * sizeof(char));
     memset(flags, 0, flags_size*sizeof(char));
     for(eint_t p = 2; p < count; ++p){
@@ -390,7 +388,7 @@ void eratosthenes_bitmap(size_t count, eint_t *result_destination, size_t *resul
 
 
 void eratosthenes_bitmap_sqrt(size_t count, eint_t *result_destination, size_t *result_size){
-    const size_t flags_size = (count + 2)/8;
+    const size_t flags_size = (count + 2)/8 + 10;
     char *const flags = malloc(flags_size * sizeof(char));
     memset(flags, 0, flags_size*sizeof(char));
     eint_t sq = (eint_t)(sqrt(count)) + 1;
@@ -428,7 +426,7 @@ char* bits_tos(uint64_t num){
 }
 
 void eratosthenes_bitmap_sqrt_halved_pseudovec(size_t count, eint_t *result_destination, size_t *result_size){
-    const size_t flags_size = (count + 2)/(8 * 2);
+    const size_t flags_size = (count + 2)/(8 * 2) + 10;
     char *const flags = malloc((flags_size+8) * sizeof(char));
     const size_t PREFILLED_SIZE = 256*128 + 512;
     char *const prefilled = malloc(PREFILLED_SIZE);
