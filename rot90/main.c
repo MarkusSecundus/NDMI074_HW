@@ -139,14 +139,15 @@ static void task(bitmap_t bitmap)
 
     const unsigned yBlock_max = BLOCKS_COUNT/2;
     for(unsigned yBlock = 0; yBlock < yBlock_max; ++yBlock){
+
         const unsigned xBlock_max = BLOCKS_COUNT - yBlock - 1;
         for(unsigned xBlock = yBlock; xBlock < xBlock_max; ++xBlock){
 
             unsigned yBlockStart = yBlock * BLOCK_SIZE, yBlockEnd = yBlockStart + BLOCK_SIZE;
             unsigned xBlockStart = xBlock * BLOCK_SIZE, xBlockEnd = xBlockStart + BLOCK_SIZE;
 
-            for(unsigned y = yBlockStart; y < yBlockEnd; ++y){
-                for(unsigned x = xBlockStart; x < xBlockEnd; ++x){
+            for(unsigned x = xBlockStart; x < xBlockEnd; ++x){
+                for(unsigned y = yBlockStart; y < yBlockEnd; ++y){
 
                     unsigned a_x = x, a_y = y;
                     unsigned b_x = bitmap.width - 1 - y, b_y = x;
