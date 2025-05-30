@@ -131,11 +131,17 @@ static void task_naive(bitmap_t bitmap)
         }
     }
 }
+
+#define BLOCK_SIZE 8
+
+typedef pixel_t __attribute__((vector_size(BLOCK_SIZE * sizeof(pixel_t)))) pixvec;
+#define vecof(i) { i, i, i, i, i, i, i, i } //{i, i, i, i} 
+#define VEC_FOREACH(XX) XX(0) XX(1) XX(2) XX(3) XX(4) XX(5) XX(6) XX(7)  // XX(8) XX(9) XX(10) XX(11) XX(12) XX(13) XX(14) XX(15)
+
 static void task(bitmap_t bitmap)
 {
-    const unsigned BLOCK_SIZE = 8;
-
-    const unsigned BLOCKS_COUNT = bitmap.width / BLOCK_SIZE;
+    unsigned dim = bitmap.width;
+    const unsigned BLOCKS_COUNT = dim / BLOCK_SIZE;
 
     const unsigned yBlock_max = BLOCKS_COUNT/2;
     for(unsigned yBlock = 0; yBlock < yBlock_max; ++yBlock){
@@ -143,25 +149,45 @@ static void task(bitmap_t bitmap)
         const unsigned xBlock_max = BLOCKS_COUNT - yBlock - 1;
         for(unsigned xBlock = yBlock; xBlock < xBlock_max; ++xBlock){
 
-            unsigned yBlockStart = yBlock * BLOCK_SIZE, yBlockEnd = yBlockStart + BLOCK_SIZE;
-            unsigned xBlockStart = xBlock * BLOCK_SIZE, xBlockEnd = xBlockStart + BLOCK_SIZE;
+            unsigned yBlockStart = yBlock * BLOCK_SIZE;//, yBlockEnd = yBlockStart + BLOCK_SIZE;
+            unsigned xBlockStart = xBlock * BLOCK_SIZE;//, xBlockEnd = xBlockStart + BLOCK_SIZE;
 
-            for(unsigned x = xBlockStart; x < xBlockEnd; ++x){
-                for(unsigned y = yBlockStart; y < yBlockEnd; ++y){
+            pixel_t *data = bitmap.data;
 
-                    unsigned a_x = x, a_y = y;
-                    unsigned b_x = bitmap.width - 1 - y, b_y = x;
-                    unsigned c_x = bitmap.width-1-x, c_y = bitmap.height - 1 - y;
-                    unsigned d_x = y, d_y = bitmap.height-1 - x;
-                    pixel_t a = get_pixel(&bitmap, a_x, a_y);
-                    pixel_t b = get_pixel(&bitmap, b_x, b_y);
-                    pixel_t c = get_pixel(&bitmap, c_x, c_y);
-                    pixel_t d = get_pixel(&bitmap, d_x, d_y);
-                    set_pixel(&bitmap, b_x, b_y, a);
-                    set_pixel(&bitmap, c_x, c_y, b);
-                    set_pixel(&bitmap, d_x, d_y, c);
-                    set_pixel(&bitmap, a_x, a_y, d);
-                }
+
+            for(unsigned t = 0; t < BLOCK_SIZE; ++t){
+                #define INIT_A(i) data[(yBlockStart + i) *dim + xBlockStart + t] ,
+                pixvec a = { VEC_FOREACH(INIT_A) };
+                #define INIT_B(i) data[(xBlockStart + t)*dim + (dim - 1 - yBlockStart - i)] ,
+                pixvec b = { VEC_FOREACH(INIT_B) };
+                #define INIT_C(i) data[(dim - 1 - yBlockStart - i) * dim + (dim - 1 - xBlockStart - t)] ,
+                pixvec c = { VEC_FOREACH(INIT_C) };
+                #define INIT_D(i) data[(dim - 1 - xBlockStart - t)*dim + (yBlockStart + i)] ,
+                pixvec d = { VEC_FOREACH(INIT_D) };
+
+                #define PLACE_A_TO_B(i) data[(xBlockStart + t)*dim + (dim - 1 - yBlockStart - i)] = a[i];
+                VEC_FOREACH(PLACE_A_TO_B);
+                #define PLACE_B_TO_C(i) data[(dim - 1 - yBlockStart - i) * dim + (dim - 1 - xBlockStart - t)] = b[i];
+                VEC_FOREACH(PLACE_B_TO_C);
+                #define PLACE_C_TO_D(i) data[(dim - 1 - xBlockStart - t)*dim + (yBlockStart + i)] = c[i];
+                VEC_FOREACH(PLACE_C_TO_D);
+                #define PLACE_D_TO_A(i) data[(yBlockStart + i) *dim + xBlockStart + t] = d[i];
+                VEC_FOREACH(PLACE_D_TO_A);
+                //for(unsigned y = yBlockStart; y < yBlockEnd; ++y){
+//
+                //    unsigned a_x = x, a_y = y;
+                //    unsigned b_x = bitmap.width - 1 - y, b_y = x;
+                //    unsigned c_x = bitmap.width-1-x, c_y = bitmap.height - 1 - y;
+                //    unsigned d_x = y, d_y = bitmap.height-1 - x;
+                //    pixel_t a = get_pixel(&bitmap, a_x, a_y);
+                //    pixel_t b = get_pixel(&bitmap, b_x, b_y);
+                //    pixel_t c = get_pixel(&bitmap, c_x, c_y);
+                //    pixel_t d = get_pixel(&bitmap, d_x, d_y);
+                //    set_pixel(&bitmap, b_x, b_y, a);
+                //    set_pixel(&bitmap, c_x, c_y, b);
+                //    set_pixel(&bitmap, d_x, d_y, c);
+                //    set_pixel(&bitmap, a_x, a_y, d);
+                //}
             }
         }
     }
