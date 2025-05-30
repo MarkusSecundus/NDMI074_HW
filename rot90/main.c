@@ -110,11 +110,8 @@ static void flip_slow(bitmap_t in, bitmap_t out)
 
 
 
-// task is where you perform the actual task.
-// Please perform all processing in this function and its descendants.
-static void task(bitmap_t bitmap)
+static void task_naive(bitmap_t bitmap)
 {
-    (void)flip_slow;
     const unsigned y_max = bitmap.height/2;
     for(unsigned y = 0; y < y_max; ++y){
         const unsigned x_max = bitmap.width - y;
@@ -131,6 +128,39 @@ static void task(bitmap_t bitmap)
             set_pixel(&bitmap, c_x, c_y, b);
             set_pixel(&bitmap, d_x, d_y, c);
             set_pixel(&bitmap, a_x, a_y, d);
+        }
+    }
+}
+static void task(bitmap_t bitmap)
+{
+    const unsigned BLOCK_SIZE = 16;
+
+    const unsigned BLOCKS_COUNT = bitmap.width / BLOCK_SIZE;
+
+    const unsigned yBlock_max = BLOCKS_COUNT/2;
+    for(unsigned yBlock = 0; yBlock < yBlock_max; ++yBlock){
+        const unsigned xBlock_max = BLOCKS_COUNT - yBlock;
+        for(unsigned xBlock = yBlock; xBlock < xBlock_max; ++xBlock){
+
+            unsigned yBlockStart = yBlock * BLOCK_SIZE, yBlockEnd = yBlockStart + BLOCK_SIZE;
+            unsigned xBlockStart = xBlock * BLOCK_SIZE, xBlockEnd = xBlockStart + BLOCK_SIZE;
+
+            for(unsigned y = yBlockStart; y < yBlockEnd; ++y){
+                for(unsigned x = xBlockStart; x < xBlockEnd; ++x){
+                    unsigned a_x = x, a_y = y;
+                    unsigned b_x = bitmap.width - 1 - y, b_y = x;
+                    unsigned c_x = bitmap.width-1-x, c_y = bitmap.height - 1 - y;
+                    unsigned d_x = y, d_y = bitmap.height-1 - x;
+                    pixel_t a = get_pixel(&bitmap, a_x, a_y);
+                    pixel_t b = get_pixel(&bitmap, b_x, b_y);
+                    pixel_t c = get_pixel(&bitmap, c_x, c_y);
+                    pixel_t d = get_pixel(&bitmap, d_x, d_y);
+                    set_pixel(&bitmap, b_x, b_y, a);
+                    set_pixel(&bitmap, c_x, c_y, b);
+                    set_pixel(&bitmap, d_x, d_y, c);
+                    set_pixel(&bitmap, a_x, a_y, d);
+                }
+            }
         }
     }
 }
@@ -152,6 +182,8 @@ int main(int argc, const char *argv[])
 
 	// Benchmark code.
 	clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    (void)flip_slow;
+    (void)task_naive;
     (void)task;
 	task(bitmap);
 	clock_gettime(CLOCK_MONOTONIC_RAW, &end);
