@@ -89,7 +89,7 @@ void dump_to_file(bitmap_t *bitmap, FILE *f){
 	for(unsigned x = 0; x < bitmap->width;++x){
 		set_bit(buffer, y * bitmap->width + x, get_pixel(bitmap, x, y));
 	}
-    fprintf(f, "P4\n%u\n%u\n", bitmap->width, bitmap->height);
+    fprintf(f, "P4\n%u %u\n", bitmap->width, bitmap->height);
 	for(size_t t=0;t<buffer_size;++t){
 		fputc(buffer[t], f);
 	}
