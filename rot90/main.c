@@ -133,13 +133,13 @@ static void task_naive(bitmap_t bitmap)
 }
 static void task(bitmap_t bitmap)
 {
-    const unsigned BLOCK_SIZE = 8;
+    const unsigned BLOCK_SIZE = 256;
 
     const unsigned BLOCKS_COUNT = bitmap.width / BLOCK_SIZE;
 
     const unsigned yBlock_max = BLOCKS_COUNT/2;
     for(unsigned yBlock = 0; yBlock < yBlock_max; ++yBlock){
-        const unsigned xBlock_max = BLOCKS_COUNT - yBlock;
+        const unsigned xBlock_max = BLOCKS_COUNT - yBlock - 1;
         for(unsigned xBlock = yBlock; xBlock < xBlock_max; ++xBlock){
 
             unsigned yBlockStart = yBlock * BLOCK_SIZE, yBlockEnd = yBlockStart + BLOCK_SIZE;
@@ -147,6 +147,7 @@ static void task(bitmap_t bitmap)
 
             for(unsigned y = yBlockStart; y < yBlockEnd; ++y){
                 for(unsigned x = xBlockStart; x < xBlockEnd; ++x){
+
                     unsigned a_x = x, a_y = y;
                     unsigned b_x = bitmap.width - 1 - y, b_y = x;
                     unsigned c_x = bitmap.width-1-x, c_y = bitmap.height - 1 - y;
