@@ -54,7 +54,7 @@ void set_pixel(bitmap_t *bitmap, unsigned x, unsigned y, pixel_t value){
 }
 
 void dump_to_file(bitmap_t *bitmap, FILE *f){
-	const size_t buffer_size = (bitmap->width * bitmap->height)/8 + 1;
+	const size_t buffer_size = (bitmap->width * bitmap->height)/8;
 	char *buffer = malloc(buffer_size);
 	for(unsigned y = 0; y < bitmap->height;++y)
 	for(unsigned x = 0; x < bitmap->width;++x){
@@ -71,11 +71,10 @@ void dump_to_file(bitmap_t *bitmap, FILE *f){
 
 bitmap_t load_from_file(FILE *f){
     unsigned width, height;
-    if(fscanf(f, "P4\n %u %u", &width, &height) != 2){
+    if(fscanf(f, "P4\n%u %u", &width, &height) != 2){
         debug("INVALID PBM FILE!");
         exit(2);
     }
-    
     fgetc(f); // skip newline
     bitmap_t ret = make_bitmap(width, height);
 
@@ -83,7 +82,11 @@ bitmap_t load_from_file(FILE *f){
         for(unsigned x = 0; x < width; x += 8){
             char next_word = fgetc(f);
             for(unsigned i = 0; i < 8;++i){
-                set_pixel(&ret, x + i, y, get_bit(&next_word, i));
+                pixel_t p= get_bit(&next_word, i);
+                //if(!p){
+                //    debug("[%u, %u]: %u", x + i, y, p);
+                //}
+                set_pixel(&ret, x + i, y, p);
             }
         }
     }
@@ -102,9 +105,8 @@ static void task(bitmap_t in, bitmap_t out)
 {
     for(unsigned y = 0; y < in.height; ++y){
         for(unsigned x = 0; x < in.width; ++x){
-            //debug("[%u] [%u]\n", x, y);
             pixel_t p = get_pixel(&in, x, y);
-            set_pixel(&out, out.width - y, x, p);
+            set_pixel(&out, out.width - y - 1, x, p);
         }
     }
 }
@@ -127,6 +129,7 @@ int main(int argc, const char *argv[])
 
 	// Benchmark code.
 	clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    (void)task;
 	task(in_bitmap, out_bitmap);
 	clock_gettime(CLOCK_MONOTONIC_RAW, &end);
 	diff_ns = 1000000000 * (end.tv_sec - start.tv_sec) + end.tv_nsec - start.tv_nsec;
