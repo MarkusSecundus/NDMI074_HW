@@ -95,18 +95,40 @@ bitmap_t load_from_file(FILE *f){
 
 
 
+// task is where you perform the actual task.
+// Please perform all processing in this function and its descendants.
+static void flip_slow(bitmap_t in, bitmap_t out)
+{
+    for(unsigned y = 0; y < in.height; ++y){
+        for(unsigned x = 0; x < in.width; ++x){
+            pixel_t p = get_pixel(&in, x, y);
+            set_pixel(&out, out.width - y - 1, x, p);
+        }
+    }
+}
 
 
 
 
 // task is where you perform the actual task.
 // Please perform all processing in this function and its descendants.
-static void task(bitmap_t in, bitmap_t out)
+static void task(bitmap_t bitmap)
 {
-    for(unsigned y = 0; y < in.height; ++y){
-        for(unsigned x = 0; x < in.width; ++x){
-            pixel_t p = get_pixel(&in, x, y);
-            set_pixel(&out, out.width - y - 1, x, p);
+    (void)flip_slow;
+    for(unsigned y = 0; y < bitmap.height; ++y){
+        for(unsigned x = y; x < bitmap.width; ++x){
+            unsigned a_x = x, a_y = y;
+            unsigned b_x = bitmap.width - 1 - y, b_y = x;
+            unsigned c_x = bitmap.width-1-x, c_y = bitmap.height - 1 - y;
+            unsigned d_x = y, d_y = bitmap.height-1 - x;
+            pixel_t a = get_pixel(&bitmap, a_x, a_y);
+            pixel_t b = get_pixel(&bitmap, b_x, b_y);
+            pixel_t c = get_pixel(&bitmap, c_x, c_y);
+            pixel_t d = get_pixel(&bitmap, d_x, d_y);
+            set_pixel(&bitmap, b_x, b_y, a);
+            set_pixel(&bitmap, c_x, c_y, b);
+            set_pixel(&bitmap, d_x, d_y, c);
+            set_pixel(&bitmap, a_x, a_y, d);
         }
     }
 }
@@ -124,20 +146,19 @@ int main(int argc, const char *argv[])
     FILE *in = fopen(argv[1], "rb");
     FILE *out = fopen(argv[2], "wb");
 
-    bitmap_t in_bitmap = load_from_file(in);
-    bitmap_t out_bitmap = make_bitmap(in_bitmap.width, in_bitmap.height);
+    bitmap_t bitmap = load_from_file(in);
 
 	// Benchmark code.
 	clock_gettime(CLOCK_MONOTONIC_RAW, &start);
     (void)task;
-	task(in_bitmap, out_bitmap);
+	task(bitmap);
 	clock_gettime(CLOCK_MONOTONIC_RAW, &end);
 	diff_ns = 1000000000 * (end.tv_sec - start.tv_sec) + end.tv_nsec - start.tv_nsec;
 	diff_ms = diff_ns / 1000 / 1000;
 
 	// TODO: Write output here (outside of the benchmark).
 
-    dump_to_file(&out_bitmap, out);
+    dump_to_file(&bitmap, out);
     fclose(in);
     fclose(out);
 	fprintf(stderr, "# Net processing time: %lu ms\n", diff_ms);
