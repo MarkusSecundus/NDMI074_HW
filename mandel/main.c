@@ -109,25 +109,30 @@ bool is_mandelbrot_simple(float cx, float cy, unsigned N){
 	return false;
 }
 
-#define VECSIZE 8
+#define VECSIZE 4
 
-typedef float __attribute__((vector_size(VECSIZE *sizeof(float)))) floatvec;
-typedef int __attribute__((vector_size(VECSIZE * sizeof(int)))) intvec;
-#define vecof(i) { i, i, i, i, i, i, i, i }
+typedef double __attribute__((vector_size(VECSIZE *sizeof(double)))) floatvec;
+typedef long long int __attribute__((vector_size(VECSIZE * sizeof(long long)))) intvec;
+#define vecof(i) {i, i, i, i} //{ i, i, i, i, i, i, i, i }
+#define VEC_FOREACH(XX) XX(0) XX(1) XX(2) XX(3) // XX(4) XX(5) XX(6) XX(7)
 
 intvec is_mandelbrot_vec(floatvec cx, floatvec cy, unsigned N){
 	floatvec zx = vecof(0), zy = vecof(0);
 	for(unsigned i = 0; i < N; ++i){
 		floatvec sqr_x = (zx*zx - zy*zy) + cx, sqr_y = (2.0f*zx*zy) + cy;
 		zx = sqr_x, zy = sqr_y;
-		//floatvec magnitudes = (zx * zx + zy * zy);
-		//intvec distances = magnitudes >= 4.0f
-		if(false){
-			return (intvec)vecof(1);
+
+		floatvec distances = (zx * zx + zy * zy);
+		intvec magnitudes = distances <= 4.0;
+		//fprintf(stderr, "iteration %u\n", i);
+#		define AND(i) && (magnitudes[i] == 0)
+		if(1 VEC_FOREACH(AND)){
+			return (intvec)vecof(0);
 		}
+#		undef AND
 	}
 	floatvec magnitudes = (zx * zx + zy * zy);
-	intvec distances = magnitudes <= 4.0f;
+	intvec distances = magnitudes <= 4.0;
 	return distances;
 }
 
@@ -139,7 +144,7 @@ static void task_simple(const float begin_x, const float begin_y, const float st
 		float mx = begin_x;
 		for(unsigned x = 0;x < bitmap.width; ++x, mx += step){
 			pixel_t mandel_value = is_mandelbrot_simple(mx, my, iterations_count);
-			set_pixel(&bitmap, x, y, mandel_value);
+			set_pixel(&bitmap, x, y, ! mandel_value);
 		}
 	}
 }
@@ -149,12 +154,14 @@ static void task(const float begin_x, const float begin_y, const float step, bit
 {
 	float my = begin_y;
 	for(unsigned y = 0 ; y < bitmap.height; ++y, my -= step){
-		floatvec mx = (floatvec)vecof(begin_x);
-		for(size_t t=1;t<VECSIZE;++t) mx[t] += t*step;
+#		define INITVEC(i) (begin_x + i*step) ,
+		floatvec mx = (floatvec){VEC_FOREACH(INITVEC)};
+#		undef INITVEC
 		for(unsigned x = 0;x < bitmap.width; x+=VECSIZE, mx += (step*VECSIZE)){
 			intvec mandel_value = is_mandelbrot_vec(mx, (floatvec)vecof(my), iterations_count);
-			for(unsigned t=0; t < VECSIZE; ++t)
-				set_pixel(&bitmap, x + t, y, mandel_value[t]);
+#		define DUMPVEC(i) set_pixel(&bitmap, x + i, y, mandel_value[i]);
+			VEC_FOREACH(DUMPVEC)
+#		undef DEMPVEC
 		}
 	}
 }
