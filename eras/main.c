@@ -222,7 +222,7 @@ int chunk(void *arg_void){
 
 void eratosthenes_bitmap_sqrt_halved_blocked_threaded(size_t count, eint_t *result_destination, size_t *result_size){
 
-    static const unsigned THREADS_COUNT = 12;
+    static const unsigned THREADS_COUNT = 2;
     if(count < (THREADS_COUNT * THREADED_BLOCK_SIZE * 3)){
         eratosthenes_bitmap_sqrt_halved(count, result_destination, result_size);
         return;
@@ -238,24 +238,33 @@ void eratosthenes_bitmap_sqrt_halved_blocked_threaded(size_t count, eint_t *resu
     size_t small_primes_count;
     eratosthenes_bitmap_sqrt_halved_u32(sq, small_primes, &small_primes_count);
 
-    
-    thrd_t threads[THREADS_COUNT];
-    uint32_t chunk_per_thread = count / THREADS_COUNT;
-    chunk_per_thread += THREADED_BLOCK_SIZE - (chunk_per_thread % THREADED_BLOCK_SIZE);
-    struct chunk_args thread_args[THREADS_COUNT];
-    for(unsigned i = 0; i <THREADS_COUNT;++i){
-        thread_args[i].block_start = i * chunk_per_thread;
-        thread_args[i].count = min(count, thread_args[i].block_start + chunk_per_thread);
-        thread_args[i].flags = flags;
-        thread_args[i].small_primes = small_primes;
-        thread_args[i].small_primes_count = small_primes_count;
-        thrd_create(&threads[i], chunk, &thread_args[i]);
-    }
+    if(THREADS_COUNT == 1){
+        struct chunk_args arg;
+        arg.block_start = 0;
+        arg.count = count;
+        arg.flags = flags;
+        arg.small_primes = small_primes;
+        arg.small_primes_count = small_primes_count;
+        chunk(&arg);
+    }else{
+        thrd_t threads[THREADS_COUNT];
+        uint32_t chunk_per_thread = count / THREADS_COUNT;
+        chunk_per_thread += THREADED_BLOCK_SIZE - (chunk_per_thread % THREADED_BLOCK_SIZE);
+        struct chunk_args thread_args[THREADS_COUNT];
+        for(unsigned i = 0; i <THREADS_COUNT;++i){
+            thread_args[i].block_start = i * chunk_per_thread;
+            thread_args[i].count = min(count, thread_args[i].block_start + chunk_per_thread);
+            thread_args[i].flags = flags;
+            thread_args[i].small_primes = small_primes;
+            thread_args[i].small_primes_count = small_primes_count;
+            thrd_create(&threads[i], chunk, &thread_args[i]);
+        }
 
-    for(unsigned i = 0; i < THREADS_COUNT;++i){
-        thrd_join(threads[i], NULL);
+        for(unsigned i = 0; i < THREADS_COUNT;++i){
+            thrd_join(threads[i], NULL);
+        }
+        
     }
-    
     size_t res_size = 0;
 
     if(count >= 2){
@@ -581,7 +590,7 @@ void eratosthenes_ref(size_t count, eint_t *result_destination, size_t *result_s
 
 #define eratosthenes_solution eratosthenes_bitmap_sqrt_halved_blocked_threaded
 
-static const size_t TEST_COUNT  = 100000000;
+static const size_t TEST_COUNT  = 1000000000;
 static const size_t BENCH_COUNT = 20000000000;//1000000000;
 
 void test(void){
@@ -637,7 +646,7 @@ void bitarray_test(void){
 
 
 int main(void){
-    //test(); return 0;
+    test(); return 0;
     size_t in = 20000000000;
     size_t ret;
     scanf("%lu", &in);
