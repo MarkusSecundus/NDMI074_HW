@@ -18,4 +18,4 @@ hello: main.c
 
 
 clean:
-		rm -f -- hello
+		rm -f -- rot90
