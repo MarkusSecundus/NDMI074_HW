@@ -125,8 +125,8 @@ bool is_mandelbrot_simple_double(double cx, double cy, unsigned N){
 
 typedef float __attribute__((vector_size(VECSIZE *sizeof(float)))) floatvec;
 typedef int __attribute__((vector_size(VECSIZE * sizeof(int)))) intvec;
-#define vecof(i) { i, i, i, i, i, i, i, i, i, i, i, i, i, i, i, i } //{i, i, i, i} 
-#define VEC_FOREACH(XX) XX(0) XX(1) XX(2) XX(3) XX(4) XX(5) XX(6) XX(7) XX(8) XX(9) XX(10) XX(11) XX(12) XX(13) XX(14) XX(15)
+#define vecof(i) { i, i, i, i, i, i, i, i, i, i, i, i, i, i, i, i } //{ i, i, i, i, i, i, i, i } //{i, i, i, i} 
+#define VEC_FOREACH(XX) XX(0) XX(1) XX(2) XX(3) XX(4) XX(5) XX(6) XX(7)  XX(8) XX(9) XX(10) XX(11) XX(12) XX(13) XX(14) XX(15)
 
 intvec is_mandelbrot_vec(floatvec cx, floatvec cy, unsigned N){
 	floatvec zx = vecof(0), zy = vecof(0);
@@ -151,10 +151,10 @@ intvec is_mandelbrot_vec(floatvec cx, floatvec cy, unsigned N){
 
 static void task_simpled(const double begin_x, const double begin_y, const double step, bitmap_t bitmap, const unsigned iterations_count)
 {
-	double my = begin_y;
-	for(unsigned y = 0 ; y < bitmap.height; ++y, my -= step){
-		double mx = begin_x;
-		for(unsigned x = 0;x < bitmap.width; ++x, mx += step){
+	for(unsigned y = 0 ; y < bitmap.height; ++y){
+		for(unsigned x = 0;x < bitmap.width; ++x){
+			float my = begin_y - y * step;
+			float mx = begin_x + x*step;
 			pixel_t mandel_value = is_mandelbrot_simple_double(mx, my, iterations_count);
 			set_pixel(&bitmap, x, y, ! mandel_value);
 		}
@@ -163,10 +163,10 @@ static void task_simpled(const double begin_x, const double begin_y, const doubl
 
 static void task_simple(const float begin_x, const float begin_y, const float step, bitmap_t bitmap, const unsigned iterations_count)
 {
-	float my = begin_y;
-	for(unsigned y = 0 ; y < bitmap.height; ++y, my -= step){
-		float mx = begin_x;
-		for(unsigned x = 0;x < bitmap.width; ++x, mx += step){
+	for(unsigned y = 0 ; y < bitmap.height; ++y){
+		for(unsigned x = 0;x < bitmap.width; ++x){
+			float my = begin_y - y * step;
+			float mx = begin_x + x*step;
 			pixel_t mandel_value = is_mandelbrot_simple(mx, my, iterations_count);
 			set_pixel(&bitmap, x, y, ! mandel_value);
 		}
@@ -176,16 +176,16 @@ static void task_simple(const float begin_x, const float begin_y, const float st
 // Please perform all processing in this function and its descendants.
 static void task(const float begin_x, const float begin_y, const float step, bitmap_t bitmap, const unsigned iterations_count)
 {
-	float my = begin_y;
-	for(unsigned y = 0 ; y < bitmap.height; ++y, my -= step){
-#		define INITVEC(i) (begin_x + i*step) ,
-		floatvec mx = (floatvec){VEC_FOREACH(INITVEC)};
-#		undef INITVEC
-		for(unsigned x = 0;x < bitmap.width; x+=VECSIZE, mx += (step*VECSIZE)){
+	for(unsigned y = 0 ; y < bitmap.height; ++y){
+		float my = begin_y - y*step;
+		for(unsigned x = 0;x < bitmap.width; x+=VECSIZE){
+#			define INITVEC(i) (begin_x + ((x+i)*step)) ,
+			floatvec mx = (floatvec){VEC_FOREACH(INITVEC)};
+#			undef INITVEC
 			intvec mandel_value = is_mandelbrot_vec(mx, (floatvec)vecof(my), iterations_count);
 #		define DUMPVEC(i) set_pixel(&bitmap, x + i, y, mandel_value[i]);
 			VEC_FOREACH(DUMPVEC)
-#		undef DEMPVEC
+#		undef DUMPVEC
 		}
 	}
 }
