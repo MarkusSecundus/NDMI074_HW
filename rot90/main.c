@@ -131,10 +131,24 @@ static void task_naive(bitmap_t bitmap)
         }
     }
 }
+
+
+static inline void swap_pixels(pixel_t *restrict a, pixel_t *restrict b, pixel_t *restrict c, pixel_t *restrict d){
+    pixel_t aVal = *a;
+    pixel_t bVal = *b;
+    pixel_t cVal = *c;
+    pixel_t dVal = *d;
+    *b = aVal;
+    *c = bVal;
+    *d = cVal;
+    *a = dVal;
+}
+
 static void task(bitmap_t bitmap)
 {
     const unsigned BLOCK_SIZE = 8;
 
+    const unsigned dim = bitmap.width, dimMinus1 = dim-1;
     const unsigned BLOCKS_COUNT = bitmap.width / BLOCK_SIZE;
 
     const unsigned yBlock_max = BLOCKS_COUNT/2;
@@ -146,21 +160,16 @@ static void task(bitmap_t bitmap)
             unsigned yBlockStart = yBlock * BLOCK_SIZE, yBlockEnd = yBlockStart + BLOCK_SIZE;
             unsigned xBlockStart = xBlock * BLOCK_SIZE, xBlockEnd = xBlockStart + BLOCK_SIZE;
 
+            pixel_t *data = bitmap.data;
             for(unsigned x = xBlockStart; x < xBlockEnd; ++x){
                 for(unsigned y = yBlockStart; y < yBlockEnd; ++y){
 
-                    unsigned a_x = x, a_y = y;
-                    unsigned b_x = bitmap.width - 1 - y, b_y = x;
-                    unsigned c_x = bitmap.width-1-x, c_y = bitmap.height - 1 - y;
-                    unsigned d_x = y, d_y = bitmap.height-1 - x;
-                    pixel_t a = get_pixel(&bitmap, a_x, a_y);
-                    pixel_t b = get_pixel(&bitmap, b_x, b_y);
-                    pixel_t c = get_pixel(&bitmap, c_x, c_y);
-                    pixel_t d = get_pixel(&bitmap, d_x, d_y);
-                    set_pixel(&bitmap, b_x, b_y, a);
-                    set_pixel(&bitmap, c_x, c_y, b);
-                    set_pixel(&bitmap, d_x, d_y, c);
-                    set_pixel(&bitmap, a_x, a_y, d);
+                    unsigned a_x = x +(y)*dim;
+                    unsigned b_x = dimMinus1 - y + (x)*dim;
+                    unsigned c_x = dimMinus1-x + (dimMinus1 - y)*dim;
+                    unsigned d_x = y + (dimMinus1 - x)*dim;
+
+                    swap_pixels(&data[a_x], &data[b_x], &data[c_x], &data[d_x]);
                 }
             }
         }
