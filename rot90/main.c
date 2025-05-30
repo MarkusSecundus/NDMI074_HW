@@ -41,9 +41,6 @@ void destroy_bitmap(bitmap_t *bitmap){
 	bitmap->width = bitmap->height = 0;
 }
 
-bitmap_t get_row(bitmap_t *bitmap, unsigned y){
-	return (bitmap_t){bitmap->width, 1, &bitmap->data[bitmap->width * y]};
-}
 pixel_t get_pixel(bitmap_t *bitmap, unsigned x, unsigned y){
 	return bitmap->data[bitmap->width * y + x];
 }
@@ -155,12 +152,12 @@ static void task(bitmap_t bitmap)
                     unsigned d_x = y, d_y = bitmap.height-1 - x;
                     pixel_t a = get_pixel(&bitmap, a_x, a_y);
                     pixel_t b = get_pixel(&bitmap, b_x, b_y);
-                    pixel_t c = get_pixel(&bitmap, c_x, c_y);
                     pixel_t d = get_pixel(&bitmap, d_x, d_y);
-                    set_pixel(&bitmap, b_x, b_y, a);
-                    set_pixel(&bitmap, c_x, c_y, b);
-                    set_pixel(&bitmap, d_x, d_y, c);
+                    pixel_t c = get_pixel(&bitmap, c_x, c_y);
                     set_pixel(&bitmap, a_x, a_y, d);
+                    set_pixel(&bitmap, d_x, d_y, c);
+                    set_pixel(&bitmap, c_x, c_y, b);
+                    set_pixel(&bitmap, b_x, b_y, a);
                 }
             }
         }
