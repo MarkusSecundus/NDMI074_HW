@@ -133,7 +133,7 @@ static void task_naive(bitmap_t bitmap)
 }
 static void task(bitmap_t bitmap)
 {
-    const unsigned BLOCK_SIZE = 256;
+    const unsigned BLOCK_SIZE = 8;
 
     const unsigned BLOCKS_COUNT = bitmap.width / BLOCK_SIZE;
 
