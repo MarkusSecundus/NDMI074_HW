@@ -154,7 +154,7 @@ static void task(const float begin_x, const float begin_y, const float step, bit
 		for(unsigned x = 0;x < bitmap.width; x+=VECSIZE, mx += (step*VECSIZE)){
 			intvec mandel_value = is_mandelbrot_vec(mx, (floatvec)vecof(my), iterations_count);
 			for(unsigned t=0; t < VECSIZE; ++t)
-				set_pixel(&bitmap, x + t, y, ! mandel_value[t]);
+				set_pixel(&bitmap, x + t, y, mandel_value[t]);
 		}
 	}
 }
