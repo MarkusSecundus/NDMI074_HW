@@ -190,9 +190,9 @@ int main(int argc, const char *argv[])
 
 	// TODO: Write output here (outside of the benchmark).
 	
-	FILE *f = fopen("mandel.pbm", "wb");
-	dump_to_file(&bitmap, f);
-	fclose(f);
+	//FILE *f = fopen("mandel.pbm", "wb");
+	dump_to_file(&bitmap, stdout);
+	//fclose(f);
 	destroy_bitmap(&bitmap);
 
 	fprintf(stderr, "# Net processing time: %lu ms\n", diff_ms);
