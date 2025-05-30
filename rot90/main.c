@@ -115,8 +115,10 @@ static void flip_slow(bitmap_t in, bitmap_t out)
 static void task(bitmap_t bitmap)
 {
     (void)flip_slow;
-    for(unsigned y = 0; y < bitmap.height; ++y){
-        for(unsigned x = y; x < bitmap.width; ++x){
+    const unsigned y_max = bitmap.height/2;
+    for(unsigned y = 0; y < y_max; ++y){
+        const unsigned x_max = bitmap.width - y;
+        for(unsigned x = y; x < x_max; ++x){
             unsigned a_x = x, a_y = y;
             unsigned b_x = bitmap.width - 1 - y, b_y = x;
             unsigned c_x = bitmap.width-1-x, c_y = bitmap.height - 1 - y;
