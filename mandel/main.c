@@ -109,12 +109,24 @@ bool is_mandelbrot_simple(float cx, float cy, unsigned N){
 	return false;
 }
 
-#define VECSIZE 4
+bool is_mandelbrot_simple_double(double cx, double cy, unsigned N){
+	double zx = 0, zy = 0;
+	for(unsigned i = 0; i < N;++i){
+		double sqr_x = (zx*zx - zy*zy) + cx, sqr_y = (2.0*zx*zy) + cy;
+		zx = sqr_x, zy = sqr_y;
+		if((zx * zx + zy * zy) >= 4){
+			return true;
+		}
+	}
+	return false;
+}
 
-typedef double __attribute__((vector_size(VECSIZE *sizeof(double)))) floatvec;
-typedef long long int __attribute__((vector_size(VECSIZE * sizeof(long long)))) intvec;
-#define vecof(i) {i, i, i, i} //{ i, i, i, i, i, i, i, i }
-#define VEC_FOREACH(XX) XX(0) XX(1) XX(2) XX(3) // XX(4) XX(5) XX(6) XX(7)
+#define VECSIZE 16
+
+typedef float __attribute__((vector_size(VECSIZE *sizeof(float)))) floatvec;
+typedef int __attribute__((vector_size(VECSIZE * sizeof(int)))) intvec;
+#define vecof(i) { i, i, i, i, i, i, i, i, i, i, i, i, i, i, i, i } //{i, i, i, i} 
+#define VEC_FOREACH(XX) XX(0) XX(1) XX(2) XX(3) XX(4) XX(5) XX(6) XX(7) XX(8) XX(9) XX(10) XX(11) XX(12) XX(13) XX(14) XX(15)
 
 intvec is_mandelbrot_vec(floatvec cx, floatvec cy, unsigned N){
 	floatvec zx = vecof(0), zy = vecof(0);
@@ -136,6 +148,18 @@ intvec is_mandelbrot_vec(floatvec cx, floatvec cy, unsigned N){
 	return distances;
 }
 
+
+static void task_simpled(const double begin_x, const double begin_y, const double step, bitmap_t bitmap, const unsigned iterations_count)
+{
+	double my = begin_y;
+	for(unsigned y = 0 ; y < bitmap.height; ++y, my -= step){
+		double mx = begin_x;
+		for(unsigned x = 0;x < bitmap.width; ++x, mx += step){
+			pixel_t mandel_value = is_mandelbrot_simple_double(mx, my, iterations_count);
+			set_pixel(&bitmap, x, y, ! mandel_value);
+		}
+	}
+}
 
 static void task_simple(const float begin_x, const float begin_y, const float step, bitmap_t bitmap, const unsigned iterations_count)
 {
@@ -176,11 +200,11 @@ int main(int argc, const char *argv[])
 		fprintf(stderr, "Not enough arguments - expected `r0 i0 w h step iter` but only %d arguments were provided!", argc);
 		return 1;
 	}
-	const float begin_x = atof(argv[1]);
-	const float begin_y = atof(argv[2]);
+	const double begin_x = atof(argv[1]);
+	const double begin_y = atof(argv[2]);
 	const unsigned width = (unsigned)atoi(argv[3]);
 	const unsigned height = (unsigned)atoi(argv[4]);
-	const float step = atof(argv[5]);
+	const double step = atof(argv[5]);
 	const unsigned iterations_count = (unsigned)atoi(argv[6]);
 	bitmap_t bitmap = make_bitmap(width, height);
 
@@ -189,6 +213,7 @@ int main(int argc, const char *argv[])
 	// Benchmark code.
 	clock_gettime(CLOCK_MONOTONIC_RAW, &start);
 	(void)task_simple;
+	(void)task_simpled;
 	(void)task;
 	task(begin_x, begin_y, step, bitmap, iterations_count);
 	clock_gettime(CLOCK_MONOTONIC_RAW, &end);
