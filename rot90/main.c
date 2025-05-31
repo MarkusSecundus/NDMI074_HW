@@ -152,7 +152,7 @@ static void task(bitmap_t bitmap)
     const unsigned BLOCKS_COUNT = bitmap.width / BLOCK_SIZE;
 
     const unsigned yBlock_max = BLOCKS_COUNT/2;
-    for(int yBlock = yBlock_max - 1; yBlock >= 0; --yBlock){
+    for(unsigned yBlock = 0; yBlock < yBlock_max; ++yBlock){
 
         const unsigned xBlock_max = BLOCKS_COUNT - yBlock - 1;
         for(unsigned xBlock = yBlock; xBlock < xBlock_max; ++xBlock){
