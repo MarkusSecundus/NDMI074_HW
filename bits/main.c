@@ -20,8 +20,7 @@ unsigned rotl(unsigned i, unsigned rotation_amount){
 
 
 unsigned multiply_by_power_of_two_v1(unsigned i, unsigned log2ofTheMultiplier){
-    //this is correct only if assuming that overflow on multiplication is UB even for unsigned int
-    return i << log2ofTheMultiplier;
+    return (unsigned)(((unsigned long long)i) << log2ofTheMultiplier);
 }
 
 
@@ -70,10 +69,10 @@ unsigned multiply_by_20(unsigned i){
 
 
 unsigned div_round_up(unsigned i, unsigned divider){
-    return (i+divider-1)/divider;
+    return (unsigned)(((unsigned long long)i+divider-1)/divider);  //compute in 64 number because otherwise we can overflow when adding the divider
 }
 unsigned div_round_half_up(unsigned i, unsigned divider){
-    return (i+divider/2)/divider;
+    return (unsigned)(((unsigned long long)i+(divider>>1))/divider); //compute in 64 number because otherwise we can overflow when adding the divider
 }
 
 bool is_powerof_2(unsigned i){
@@ -96,13 +95,12 @@ unsigned mirror_bits(unsigned i){
     return i;
 }
 
-unsigned round_to_greater_powerof2_sharp(unsigned u){
-    //only supports numbers up to `(1<<31)-1`, returns `0` for greater numbers
-    return helper_extract_most_significant_bit(u)<<1;
+unsigned long long round_to_greater_powerof2_sharp(unsigned u){
+    return ((unsigned long long)helper_extract_most_significant_bit(u))<<1;
 }
-unsigned round_to_greater_powerof2_nonsharp(unsigned u){
+unsigned long long round_to_greater_powerof2_nonsharp(unsigned u){
     //only supports numbers up to `1<<31`, returns `0` for greater numbers
-    //no need to specially handle u==0, because `((unsigned)0 - 1)` is greater than `1<<31` and thus correctly returns `0`
+    if(u == 0) return 0;
     return round_to_greater_powerof2_sharp(u-1);
 }
 
@@ -113,12 +111,20 @@ unsigned round_to_greater_powerof2_nonsharp(unsigned u){
 
 #define ARRAYSIZE(...) (sizeof(__VA_ARGS__)/sizeof(*(__VA_ARGS__)))
 int main(){
-    unsigned arr[] = {-1, 0, 1, 30, 32, 477, 9999, 64000, 78888, 987654, 987654321, 1<<31, (1<<31) + 9};
-    for(int t=0;t<ARRAYSIZE(arr);++t){
-        unsigned log;
-        unsigned msb = helper_extract_most_significant_bit_and_get_log2(arr[t], &log);
-        printf("log2(%u) = %u (%u; 1<<%u)\n", arr[t], msb, 1<<log, log);
-    }
+
+    //for(unsigned t=0;t<30;++t){
+    //    const unsigned divider = 8;
+    //    printf("%d / %d == %d (%.2f)\n", t, divider, div_round_half_up(t, divider), t*1.0f/divider);
+    //}
+    //return 0;
+
+
+    //unsigned arr[] = {-1, 0, 1, 30, 32, 477, 9999, 64000, 78888, 987654, 987654321, 1<<31, (1<<31) + 9};
+    //for(int t=0;t<ARRAYSIZE(arr);++t){
+    //    unsigned log;
+    //    unsigned long long msb = helper_extract_most_significant_bit_and_get_log2(arr[t], &log);
+    //    printf("log2(%u) = %llu (%llu; 1<<%u)\n", arr[t], round_to_greater_powerof2_nonsharp(arr[t]), ((unsigned long long)1)<<log, log);
+    //}
 
     return 0;
 }
